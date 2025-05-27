@@ -82,7 +82,6 @@ void init_settings(void) {
 
 void update_octave(void) {
 	static uint8_t last_pa1 = 1, last_pa0 = 1; // PA1, PA0の前回状態
-	static uint8_t temp_shift = 0; // 一時的なシフト状態
 	static uint8_t pa1_pressed = 0, pa0_pressed = 0; // ボタン押下フラグ
 	static uint16_t pa1_timer = 0, pa0_timer = 0; // 押下時間計測
 	static int8_t original_shift = 0; // 押す前のオクターブシフト値
@@ -96,7 +95,6 @@ void update_octave(void) {
 	if (midi_channel == 9 && (PIND & (1 << PD2))) {
 		if (octave_shift != 0) {
 			octave_shift = 0; // シフトをリセット
-			temp_shift = 0;
 		}
 		last_pa1 = curr_pa1;
 		last_pa0 = curr_pa0;
@@ -115,7 +113,6 @@ void update_octave(void) {
 		pa0_pressed = 0;
 		pa1_timer = 0;
 		pa0_timer = 0;
-		temp_shift = 0;
 		_delay_ms(10); // デバウンス
 		} else if (function_mode && (curr_pa1 || curr_pa0)) { // どちらかが離された
 		function_mode = 0; // ファンクションキーモードOFF
@@ -183,12 +180,10 @@ void update_octave(void) {
 		original_shift = octave_shift; // 現在のシフト値を保存
 		if (octave_shift < 3) { // 全チャンネルで-5～+3
 			octave_shift++; // 即時シフトアップ
-			temp_shift = 1; // シフト適用中
 		}
 		} else if (curr_pa1 && !last_pa1 && pa1_pressed) { // PA1が離された
 		if (pa1_timer >= 200) { // 長押し（200ms以上）
 			octave_shift = original_shift; // 元のシフト値に戻す
-			temp_shift = 0;
 		} // 短押し（200ms未満）の場合はシフトを維持
 		pa1_pressed = 0; // 押下フラグクリア
 		} else if (pa1_pressed) { // PA1が押され続けている
@@ -202,12 +197,10 @@ void update_octave(void) {
 		original_shift = octave_shift; // 現在のシフト値を保存
 		if (octave_shift > -5) { // 全チャンネルで-5～+3
 			octave_shift--; // 即時シフトダウン
-			temp_shift = -1; // シフト適用中
 		}
 		} else if (curr_pa0 && !last_pa0 && pa0_pressed) { // PA0が離された
 		if (pa0_timer >= 200) { // 長押し（200ms以上）
 			octave_shift = original_shift; // 元のシフト値に戻す
-			temp_shift = 0;
 		} // 短押し（200ms未満）の場合はシフトを維持
 		pa0_pressed = 0; // 押下フラグクリア
 		} else if (pa0_pressed) { // PA0が押され続けている
